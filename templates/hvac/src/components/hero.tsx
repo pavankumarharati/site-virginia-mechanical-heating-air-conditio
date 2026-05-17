@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Phone, ArrowRight, ShieldCheck, Star, Clock } from "lucide-react"
 import { BUSINESS, TRUST_BADGES } from "@/lib/config"
-import { gsap } from "@/lib/gsap-init"
+import { gsap, ScrollTrigger } from "@/lib/gsap-init"
 
 const EASE = "power3.out"
 
@@ -20,8 +20,6 @@ function useParticles(ref: React.RefObject<HTMLCanvasElement | null>) {
     const canvas = ref.current
     if (!canvas) return
     const ctx = canvas.getContext("2d")!
-
-    // Read particle color from CSS var set by theme
     const particleColor = getComputedStyle(document.documentElement)
       .getPropertyValue("--brand-particle").trim() || "rgba(96,165,250,0.40)"
 
@@ -58,6 +56,7 @@ function useParticles(ref: React.RefObject<HTMLCanvasElement | null>) {
   }, [ref])
 }
 
+// 3D tilt stat card
 function StatCard({ stat, delay }: { stat: typeof STATS[0]; delay: number }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const numRef  = useRef<HTMLSpanElement>(null)
@@ -77,13 +76,37 @@ function StatCard({ stat, delay }: { stat: typeof STATS[0]; delay: number }) {
       delay: delay + 0.2,
       onUpdate() { num.textContent = Math.round(obj.n).toLocaleString() + stat.suffix },
     })
+
+    // 3D tilt on mouse move
+    const onMove = (e: MouseEvent) => {
+      const rect = card.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      const rx = ((e.clientY - cy) / (rect.height / 2)) * -10
+      const ry = ((e.clientX - cx) / (rect.width  / 2)) *  10
+      gsap.to(card, {
+        rotateX: rx, rotateY: ry, scale: 1.04,
+        duration: 0.25, ease: "power2.out",
+        transformPerspective: 700,
+      })
+    }
+    const onLeave = () => {
+      gsap.to(card, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.5, ease: "elastic.out(1,0.5)" })
+    }
+
+    card.addEventListener("mousemove", onMove)
+    card.addEventListener("mouseleave", onLeave)
+    return () => { card.removeEventListener("mousemove", onMove); card.removeEventListener("mouseleave", onLeave) }
   }, [delay, stat.suffix, stat.value])
 
   return (
     <div
       ref={cardRef}
-      className="tilt-card glass-card rounded-2xl p-6 group cursor-default"
-      style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)" }}
+      className="glass-card rounded-2xl p-6 group cursor-default"
+      style={{
+        boxShadow: "0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
+        transformStyle: "preserve-3d",
+      }}
     >
       <div
         className="font-display font-900 text-3xl mb-1 tabular-nums text-gradient-animate"
@@ -98,6 +121,8 @@ function StatCard({ stat, delay }: { stat: typeof STATS[0]; delay: number }) {
 }
 
 export default function Hero() {
+  const sectionRef  = useRef<HTMLElement>(null)
+  const heroBgRef   = useRef<HTMLDivElement>(null)
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const badgeRef    = useRef<HTMLDivElement>(null)
   const labelRef    = useRef<HTMLDivElement>(null)
@@ -106,9 +131,32 @@ export default function Hero() {
   const ctaRef      = useRef<HTMLDivElement>(null)
   const trustRef    = useRef<HTMLDivElement>(null)
   const badgesRef   = useRef<HTMLDivElement>(null)
-  const grainRef    = useRef<HTMLDivElement>(null)
+
+  const [hasHeroImg, setHasHeroImg] = useState(false)
 
   useParticles(canvasRef)
+
+  // Parallax on hero background image
+  useEffect(() => {
+    const bg = heroBgRef.current
+    const section = sectionRef.current
+    if (!bg || !section || !hasHeroImg) return
+
+    gsap.fromTo(bg,
+      { y: "0%" },
+      {
+        y: "-25%",
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.8,
+        },
+      }
+    )
+    return () => { ScrollTrigger.getAll().forEach(t => t.kill()) }
+  }, [hasHeroImg])
 
   // Master entrance timeline
   useEffect(() => {
@@ -125,9 +173,27 @@ export default function Hero() {
 
   return (
     <section
+      ref={sectionRef}
       className="grain relative min-h-screen flex items-center overflow-hidden"
       style={{ background: `linear-gradient(160deg, var(--brand-bg) 0%, var(--brand-bg-mid) 60%, var(--brand-bg) 100%)` }}
     >
+      {/* AI hero image — parallax background, hidden if not available */}
+      <div
+        ref={heroBgRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{ top: "-15%", bottom: "-15%", overflow: "hidden" }}
+        aria-hidden
+      >
+        <img
+          src="/hero.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: hasHeroImg ? 0.22 : 0, transition: "opacity 1s ease" }}
+          onLoad={() => setHasHeroImg(true)}
+          onError={() => setHasHeroImg(false)}
+        />
+      </div>
+
       {/* Particle field */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden />
 
@@ -135,7 +201,7 @@ export default function Hero() {
       <div className="aurora-blob-1 absolute -top-32 -right-32 w-[800px] h-[800px] rounded-full pointer-events-none" aria-hidden />
       <div className="aurora-blob-2 absolute -bottom-48 -left-48 w-[600px] h-[600px] rounded-full pointer-events-none" aria-hidden />
 
-      {/* Subtle grid */}
+      {/* Grid overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -145,10 +211,14 @@ export default function Hero() {
         aria-hidden
       />
 
-      {/* Radial vignette */}
+      {/* Radial vignette — stronger when image present */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)" }}
+        style={{
+          background: hasHeroImg
+            ? "radial-gradient(ellipse 90% 90% at 50% 50%, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.75) 100%)"
+            : "radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)",
+        }}
         aria-hidden
       />
 
@@ -157,7 +227,6 @@ export default function Hero() {
 
           {/* LEFT — copy */}
           <div>
-            {/* Eyebrow label */}
             <div ref={labelRef} className="mb-4">
               <span
                 className="text-[0.65rem] font-body font-700 tracking-[0.3em] uppercase"
@@ -167,13 +236,11 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* Emergency badge */}
             <div ref={badgeRef} className="accent-badge mb-7 w-fit">
               <span className="accent-dot" />
               24/7 Emergency Service Available
             </div>
 
-            {/* Giant headline */}
             <h1
               ref={h1Ref}
               className="font-display font-900 text-white leading-[1.0] mb-6"
@@ -197,7 +264,6 @@ export default function Hero() {
               <span className="text-white font-700">{BUSINESS.review_count}+ homeowners</span> in {BUSINESS.serviceAreas[0]}.
             </p>
 
-            {/* CTAs */}
             <div ref={ctaRef} className="flex flex-col sm:flex-row gap-3 mb-10">
               <a href={BUSINESS.phoneHref} className="btn-primary">
                 <Phone className="w-5 h-5 shrink-0" />
@@ -212,7 +278,6 @@ export default function Hero() {
               </a>
             </div>
 
-            {/* Trust row */}
             <div ref={trustRef} className="flex flex-wrap gap-5">
               <div className="flex items-center gap-1.5 text-white/55 text-sm font-body">
                 <Star className="w-4 h-4 fill-current" style={{ color: "var(--brand-accent)" }} />
@@ -230,7 +295,7 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* RIGHT — stat cards */}
+          {/* RIGHT — 3D tilt stat cards */}
           <div className="hidden lg:grid grid-cols-2 gap-4">
             {STATS.map((stat, i) => (
               <StatCard key={stat.label} stat={stat} delay={0.4 + i * 0.1} />
