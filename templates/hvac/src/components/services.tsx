@@ -46,7 +46,7 @@ export default function Services() {
   return (
     <section
       id="services"
-      className="relative py-28 px-5 overflow-hidden"
+      className="relative py-20 px-5 overflow-hidden"
       style={{ background: "linear-gradient(180deg, var(--brand-bg) 0%, color-mix(in srgb, var(--brand-bg) 85%, #000) 100%)" }}
     >
       {/* Subtle accent glow behind heading */}
@@ -82,11 +82,11 @@ export default function Services() {
           <div className="accent-rule mx-auto" />
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div ref={gridRef} className="flex flex-wrap justify-center gap-5">
           {SERVICES.map((service) => (
             <div
               key={service.title}
-              className="service-card group relative rounded-2xl p-7 cursor-default transition-all duration-300"
+              className="service-card group relative rounded-2xl p-7 cursor-default transition-all duration-300 w-full sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
               style={{
                 background: service.urgent
                   ? `linear-gradient(135deg, color-mix(in srgb, var(--brand-accent) 18%, transparent), color-mix(in srgb, var(--brand-accent) 8%, transparent))`
