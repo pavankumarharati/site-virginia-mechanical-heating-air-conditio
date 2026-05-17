@@ -13,6 +13,7 @@ export const BUSINESS = {
   google_rating: "4.9",
   review_count: "200",
   emergency: true,
+  theme: "navy",
 } as const
 
 export const SERVICES: Service[] = [
