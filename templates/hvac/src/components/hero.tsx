@@ -41,7 +41,7 @@ function useParticles(ref: React.RefObject<HTMLCanvasElement | null>) {
   }, [ref])
 }
 
-// 3D tilt photo card
+// Photo card — shimmer while loading, fade in on load, subtle scale on hover
 function PhotoCard({ src, delay, tall }: { src: string; delay: number; tall?: boolean }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [loaded, setLoaded] = useState(false)
@@ -49,49 +49,39 @@ function PhotoCard({ src, delay, tall }: { src: string; delay: number; tall?: bo
   useEffect(() => {
     const card = cardRef.current
     if (!card) return
-    gsap.from(card, { opacity: 0, y: 40, scale: 0.9, duration: 0.7, ease: EASE, delay })
-
-    const onMove = (e: MouseEvent) => {
-      const rect = card.getBoundingClientRect()
-      const rx = ((e.clientY - rect.top  - rect.height / 2) / (rect.height / 2)) * -8
-      const ry = ((e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2)) *  8
-      gsap.to(card, { rotateX: rx, rotateY: ry, scale: 1.03, duration: 0.25, ease: "power2.out", transformPerspective: 800 })
-    }
-    const onLeave = () => gsap.to(card, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.6, ease: "elastic.out(1,0.5)" })
-    card.addEventListener("mousemove", onMove)
-    card.addEventListener("mouseleave", onLeave)
-    return () => { card.removeEventListener("mousemove", onMove); card.removeEventListener("mouseleave", onLeave) }
+    gsap.from(card, { opacity: 0, y: 30, duration: 0.65, ease: EASE, delay })
   }, [delay])
 
   return (
     <div
       ref={cardRef}
-      className="relative rounded-2xl overflow-hidden"
+      className="relative rounded-2xl overflow-hidden group cursor-default"
       style={{
         height: tall ? "220px" : "160px",
         background: "rgba(255,255,255,0.05)",
         border: "1px solid rgba(255,255,255,0.1)",
-        transformStyle: "preserve-3d",
         boxShadow: "0 8px 32px -8px rgba(0,0,0,0.5)",
       }}
     >
+      {/* Shimmer skeleton while loading */}
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "var(--brand-accent)", borderTopColor: "transparent" }}
-          />
-        </div>
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 1.6s ease-in-out infinite",
+          }}
+        />
       )}
       <img
         src={src}
         alt=""
-        className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
+        className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
         style={{ opacity: loaded ? 1 : 0 }}
         onLoad={() => setLoaded(true)}
         onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = "none" }}
       />
-      {/* Subtle accent overlay on bottom */}
       <div
         className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
         style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent)" }}
@@ -233,8 +223,8 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* RIGHT — 4-photo grid with 3D tilt */}
-          <div className="hidden lg:grid grid-cols-2 gap-3">
+          {/* RIGHT — 4-photo grid */}
+          <div className="hidden md:grid grid-cols-2 gap-3">
             <PhotoCard src={HERO_IMAGES[0]} delay={0.4} tall />
             <PhotoCard src={HERO_IMAGES[1]} delay={0.5} />
             <PhotoCard src={HERO_IMAGES[2]} delay={0.55} />
