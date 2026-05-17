@@ -1,89 +1,161 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Thermometer, Flame, Droplets, Zap, ShieldCheck, Wrench } from "lucide-react"
+import { useEffect, useRef } from "react"
+import {
+  Thermometer, Flame, Droplets, Zap, ShieldCheck, Wrench,
+  Star, Heart, Scissors, Sparkles, Clock,
+} from "lucide-react"
 import { SERVICES } from "@/lib/config"
-
-const EASE = [0.25, 0.46, 0.45, 0.94] as const
+import { gsap, ScrollTrigger } from "@/lib/gsap-init"
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  thermometer: <Thermometer className="w-6 h-6" />,
-  flame: <Flame className="w-6 h-6" />,
-  droplets: <Droplets className="w-6 h-6" />,
-  zap: <Zap className="w-6 h-6" />,
+  thermometer:    <Thermometer className="w-6 h-6" />,
+  flame:          <Flame className="w-6 h-6" />,
+  droplets:       <Droplets className="w-6 h-6" />,
+  zap:            <Zap className="w-6 h-6" />,
   "shield-check": <ShieldCheck className="w-6 h-6" />,
-  wrench: <Wrench className="w-6 h-6" />,
-}
-
-const cardVariant = {
-  hidden: { opacity: 0, y: 40, scale: 0.96 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.55, ease: EASE, delay: i * 0.07 },
-  }),
+  wrench:         <Wrench className="w-6 h-6" />,
+  star:           <Star className="w-6 h-6" />,
+  heart:          <Heart className="w-6 h-6" />,
+  scissors:       <Scissors className="w-6 h-6" />,
+  sparkles:       <Sparkles className="w-6 h-6" />,
+  clock:          <Clock className="w-6 h-6" />,
 }
 
 export default function Services() {
+  const headingRef = useRef<HTMLDivElement>(null)
+  const gridRef    = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    gsap.from(headingRef.current, {
+      opacity: 0, y: 48, duration: 0.75, ease: "power3.out",
+      scrollTrigger: { trigger: headingRef.current, start: "top 87%", once: true },
+    })
+
+    const cards = gridRef.current?.querySelectorAll<HTMLElement>(".service-card")
+    if (cards?.length) {
+      gsap.from(cards, {
+        opacity: 0, y: 60, scale: 0.9, stagger: 0.07, duration: 0.7, ease: "power3.out",
+        scrollTrigger: { trigger: gridRef.current, start: "top 82%", once: true },
+      })
+    }
+
+    return () => { ScrollTrigger.getAll().forEach(t => t.kill()) }
+  }, [])
+
   return (
-    <section id="services" className="py-24 px-5 bg-[var(--color-slate-50)]">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.65, ease: EASE }}
-          className="text-center mb-14"
-        >
-          <span className="text-[var(--color-orange-500)] text-xs font-body font-700 tracking-[0.35em] uppercase mb-3 block">
+    <section
+      id="services"
+      className="relative py-28 px-5 overflow-hidden"
+      style={{ background: "linear-gradient(180deg, var(--brand-bg) 0%, color-mix(in srgb, var(--brand-bg) 85%, #000) 100%)" }}
+    >
+      {/* Subtle accent glow behind heading */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at center top, color-mix(in srgb, var(--brand-accent) 12%, transparent) 0%, transparent 70%)" }}
+        aria-hidden
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <div ref={headingRef} className="text-center mb-16">
+          <span
+            className="text-xs font-body font-700 tracking-[0.35em] uppercase mb-4 block"
+            style={{ color: "var(--brand-accent)" }}
+          >
             What We Do
           </span>
-          <h2 className="font-display font-800 text-[var(--color-navy-900)] text-4xl md:text-5xl mb-4">
-            Our Services
+          <h2
+            className="font-display font-900 text-white mb-5"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(2rem, 4vw, 3.25rem)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
+            }}
+          >
+            Services That{" "}
+            <span className="text-gradient">Solve Problems</span>
           </h2>
-          <p className="font-body text-[var(--color-slate-600)] max-w-xl mx-auto leading-relaxed">
-            Full-service HVAC and plumbing for residential and commercial properties across the Central Valley.
+          <p className="font-body text-white/50 max-w-xl mx-auto leading-relaxed text-lg">
+            Full-service HVAC and plumbing — fast, honest, and done right the first time.
           </p>
-          <div className="w-16 h-1 bg-[var(--color-orange-500)] rounded-full mx-auto mt-6" />
-        </motion.div>
+          <div className="accent-rule mx-auto" />
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {SERVICES.map((service, i) => (
-            <motion.div
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {SERVICES.map((service) => (
+            <div
               key={service.title}
-              variants={cardVariant}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-50px" }}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.2 }}
-              className={`relative rounded-2xl p-7 border transition-colors duration-300 cursor-default ${
-                service.urgent
-                  ? "bg-[var(--color-navy-900)] border-[var(--color-orange-500)]/50 hover:border-[var(--color-orange-500)]"
-                  : "bg-white border-[var(--color-slate-200)] hover:border-[var(--color-navy-700)]/30 shadow-[var(--shadow-card)]"
-              }`}
+              className="service-card group relative rounded-2xl p-7 cursor-default transition-all duration-300"
+              style={{
+                background: service.urgent
+                  ? `linear-gradient(135deg, color-mix(in srgb, var(--brand-accent) 18%, transparent), color-mix(in srgb, var(--brand-accent) 8%, transparent))`
+                  : "rgba(255,255,255,0.04)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: service.urgent
+                  ? "1px solid color-mix(in srgb, var(--brand-accent) 45%, transparent)"
+                  : "1px solid rgba(255,255,255,0.08)",
+                boxShadow: service.urgent
+                  ? "0 0 40px -8px color-mix(in srgb, var(--brand-accent) 25%, transparent)"
+                  : "0 4px 24px -8px rgba(0,0,0,0.4)",
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget
+                if (!service.urgent) {
+                  el.style.background = "rgba(255,255,255,0.07)"
+                  el.style.border = "1px solid rgba(255,255,255,0.16)"
+                  el.style.transform = "translateY(-4px)"
+                  el.style.boxShadow = `0 16px 48px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)`
+                }
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget
+                if (!service.urgent) {
+                  el.style.background = "rgba(255,255,255,0.04)"
+                  el.style.border = "1px solid rgba(255,255,255,0.08)"
+                  el.style.transform = ""
+                  el.style.boxShadow = "0 4px 24px -8px rgba(0,0,0,0.4)"
+                }
+              }}
             >
               {service.urgent && (
-                <div className="absolute top-4 right-4 bg-[var(--color-orange-500)] text-white text-[0.6rem] font-700 px-2.5 py-1 rounded-full tracking-wider">
+                <div
+                  className="absolute top-4 right-4 text-white text-[0.6rem] font-700 px-2.5 py-1 rounded-full tracking-wider"
+                  style={{ background: "var(--brand-accent)" }}
+                >
                   24/7
                 </div>
               )}
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${
-                service.urgent
-                  ? "bg-[var(--color-orange-500)]/20 text-[var(--color-orange-400)]"
-                  : "bg-[var(--color-navy-700)]/10 text-[var(--color-navy-700)]"
-              }`}>
-                {ICON_MAP[service.icon]}
+
+              {/* Icon */}
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-colors duration-300"
+                style={{
+                  background: "color-mix(in srgb, var(--brand-accent) 15%, transparent)",
+                  color: "var(--brand-accent-light)",
+                  border: "1px solid color-mix(in srgb, var(--brand-accent) 25%, transparent)",
+                }}
+              >
+                {ICON_MAP[service.icon] ?? <Wrench className="w-6 h-6" />}
               </div>
-              <h3 className={`font-display font-700 text-xl mb-2 ${service.urgent ? "text-white" : "text-[var(--color-navy-900)]"}`}>
+
+              <h3
+                className="font-display font-700 text-xl mb-2 text-white"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 {service.title}
               </h3>
-              <p className={`font-body text-sm leading-relaxed ${service.urgent ? "text-white/60" : "text-[var(--color-slate-600)]"}`}>
+              <p className="font-body text-sm leading-relaxed text-white/55">
                 {service.desc}
               </p>
-            </motion.div>
+
+              {/* Hover accent line */}
+              <div
+                className="absolute bottom-0 left-7 right-7 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: `linear-gradient(90deg, transparent, var(--brand-accent), transparent)` }}
+              />
+            </div>
           ))}
         </div>
       </div>
