@@ -1,3 +1,5 @@
+export type Theme = "navy" | "ember" | "ocean" | "forest" | "slate"
+
 export interface Service {
   icon: string
   title: string
